@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mumbai Local Graph Lab</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <span class="board">MUMBAI LOCAL</span>
+    <h1>Graph Lab</h1>
+  </div>
+  <p class="sub">The suburban rail network as a graph: every station is a vertex, every track section is an edge. Discrete Mathematics, Module 6 (Graphs), with Module 3 (Relations) on the side.</p>
+</header>
+<div id="strip" class="strip" aria-label="Basic numbers"></div>
+
+<main class="app">
+  <section class="side" aria-label="Tools">
+    <nav class="tabs" role="tablist" aria-label="Tools">
+      <button role="tab" class="tab" data-tab="trip" aria-selected="true">Plan a trip</button>
+      <button role="tab" class="tab" data-tab="crit" aria-selected="false">Critical stations</button>
+      <button role="tab" class="tab" data-tab="euler" aria-selected="false">Euler and Hamilton</button>
+      <button role="tab" class="tab" data-tab="rel" aria-selected="false">Services (relation)</button>
+    </nav>
+    <div id="panel" class="panel" tabindex="-1"></div>
+  </section>
+
+  <section class="mapwrap" aria-label="Network map">
+    <div class="stage">
+      <svg id="map" role="img" aria-label="Schematic map of the Mumbai suburban railway network"></svg>
+      <div class="maptools">
+        <button id="zin" class="mbtn" aria-label="Zoom in">+</button>
+        <button id="zout" class="mbtn" aria-label="Zoom out">&minus;</button>
+        <button id="zreset" class="mbtn wide">Reset view</button>
+      </div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <p class="mapnote">Schematic map, not to scale. Stations between two fixed points are spaced evenly. Click a station to pick it, scroll to zoom, drag to pan.</p>
+  </section>
+</main>
+
+<footer class="foot">
+  <p>Data: Wikipedia pages for the Western, Central, Harbour and Trans-Harbour lines of the Mumbai Suburban Railway (suburban stations only; no metro or monorail). The model ignores timetables and fast or slow trains, so it counts stops and interchanges, not minutes.</p>
+</footer>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

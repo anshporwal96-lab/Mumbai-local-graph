@@ -1,4 +1,4 @@
-"""Flask server for the Mumbai local train route planner.
+"""Flask server for the Mumbai local train graph project.
 
 Run:  python app.py      then open http://127.0.0.1:5000
 """
@@ -11,34 +11,10 @@ app = Flask(__name__)
 NET = Network()
 POS = layout(NET)
 
-
-def facts():
-    """Everything the analysis tab needs; computed once because the network is fixed."""
-    counts = NET.counts()
-    art, bridges = NET.articulation_and_bridges()
-    impact = sorted(((NET.impact_of_closing(v), v) for v in art), reverse=True)
-    degrees = {}
-    for v in NET.stations:
-        degrees.setdefault(NET.degree(v), []).append(v)
-    plan = NET.planarity()
-    dist = NET.distance_summary()
-    return {
-        "counts": counts,
-        "degree_table": [{"degree": d, "count": len(vs), "stations": vs if d != 2 else []} for d, vs in sorted(degrees.items())],
-        "articulation": art,
-        "bridges": len(bridges),
-        "critical": [{"station": v, "stranded": n} for n, v in impact if n > 0][:12],
-        "distance": dist,
-        "planarity": plan,
-        "euler_status": NET.euler_status(),
-        "odd_count": len(NET.odd_stations()),
-        "hamilton": NET.hamilton_status(),
-    }
-
-
-FACTS = facts()
-POSTMAN = NET.chinese_postman()
-TOUR = NET.euler_tour(POSTMAN["extra_edges"], "Churchgate")
+# The network never changes, so compute the whole-network answers once at start-up.
+COUNTS = NET.counts()
+ODD = NET.odd_stations()
+CRITICAL = NET.critical_stations()
 
 
 @app.route("/")
@@ -63,30 +39,25 @@ def api_network():
 def api_route():
     src, dst = request.args.get("src", ""), request.args.get("dst", "")
     mode = request.args.get("mode", "stops")
-    closed = frozenset(x for x in request.args.get("closed", "").split("|") if x)
     if mode not in ("stops", "changes"):
         return jsonify({"error": "mode must be stops or changes"}), 400
     for s in (src, dst):
         if s not in NET.adj:
             return jsonify({"error": f"'{s}' is not a station on this map."}), 400
-    r = NET.route(src, dst, mode, closed)
-    if r is None:
-        return jsonify({"error": "No route exists" + (" with the closed stations removed." if closed else "."), "route": None})
-    return jsonify({"route": r})
+    return jsonify({"route": NET.route(src, dst, mode)})
 
 
 @app.route("/api/analysis")
 def api_analysis():
-    return jsonify(FACTS)
+    """Numbers for the strip at the top and the critical-stations table."""
+    return jsonify({"counts": COUNTS, "odd_count": len(ODD),
+                    "cut_vertices": len(CRITICAL),
+                    "critical": [{"station": v, "stranded": n} for v, n in CRITICAL[:10]]})
 
 
 @app.route("/api/euler")
 def api_euler():
-    return jsonify({
-        "odd": POSTMAN["odd"], "extra": POSTMAN["extra"], "segments": len(NET.edges), "total": POSTMAN["total_segments"],
-        "pairs": POSTMAN["pairs"], "repeated_paths": POSTMAN["repeated_paths"], "tour": TOUR,
-        "status": NET.euler_status(), "hamilton": NET.hamilton_status(),
-    })
+    return jsonify({"odd": ODD, "status": NET.euler_status(), "hamilton": NET.hamilton_status()})
 
 
 @app.route("/api/disrupt", methods=["POST"])
